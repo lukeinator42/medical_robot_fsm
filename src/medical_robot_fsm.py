@@ -177,5 +177,5 @@ while not rospy.is_shutdown():
     print("starting state machine")
     m.run(None)
     print("run complete!")
-
+    break
 
