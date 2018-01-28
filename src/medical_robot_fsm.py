@@ -141,6 +141,8 @@ def send_location_transition(room):
     elif room == "room c":
         dest_pub.publish("tlab")
 
+    return("location_complete", None)
+        
 def error_state_transition(msg):
     print("ERRRORRRR!!!!")
 
@@ -160,7 +162,8 @@ while not rospy.is_shutdown():
 
     m.add_state("start", parse_result_transition)
     m.add_state("confirm_result", confirm_result_transition)
-    m.add_state("send_location", send_location_transition, end_state=1)
+    m.add_state("send_location", send_location_transition)
+    m.add_state("location_complete", None, end_state=1)
     m.add_state("error_state", error_state_transition)
     m.add_state("error_final", None, end_state=1)
     m.set_start("start")
