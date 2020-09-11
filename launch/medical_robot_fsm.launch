@@ -1,0 +1,10 @@
+<launch>
+  <group ns="medical_robot_fsm">
+
+    <param name="loop_rate" value="10" />
+    <node pkg="medical_robot_fsm" name="medical_robot_fsm" type="medical_robot_fsm.py" output="screen">
+    	<param name="topic_name" value="tts" />
+    </node>
+    
+  </group>
+</launch>
