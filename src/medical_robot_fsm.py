@@ -21,6 +21,7 @@ rospy.loginfo("%s is %s", rospy.resolve_name('loop_rate'), loop_rate)
 rate = rospy.Rate(loop_rate)  # 10hz
 
 tts_pub = rospy.Publisher('/ros_tts/tts', String, queue_size=10)
+keyword_pub = rospy.Publisher('/keyword_spotting/recognition', Keyword, queue_size=10)
 
 def keyword_spotted_transition(args):
     print("State 1: listening for keyword")
@@ -42,10 +43,10 @@ def keyword_spotted_transition(args):
 def delay_transition(args):
     print("State 2: keyword detected, 4 second delay")
 
-    sleep(4)
+    #sleep(4)
 
-    tts_pub.publish("I am processing your request. Please wait.")
-    rate.sleep()
+    #tts_pub.publish("I am processing your request. Please wait.")
+    #rate.sleep()
 
     new_state = "user_processing"
 
@@ -66,10 +67,10 @@ def parse_result_transition(args):
     res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
     res_str = str(res)
 
-    if "deliver this package to room" not in res_str:
+    if "deliver" not in res_str or "package to " not in res_str:
         return ("error_state", None)
 
-    room = res_str.split("deliver this package to ")[1]
+    room = res_str.split("package to ")[1]
 
     new_state = "confirm_result"
 
@@ -80,27 +81,39 @@ def confirm_result_transition(room):
 
     tts_pub.publish(f"I am supposed to deliver this package to {room}. Is this correct?")
 
+    keyword_msg = Keyword()
+    keyword_msg.label = "robot"
+    keyword_msg.id = 1
+    keyword_msg.confidence = 1.0
+
+    keyword_pub.publish(keyword_msg)
+
     confirmation = False
     confirmed = False
 
     while not confirmed:
-        res = rospy.wait_for_message("/ros_keyword_spotting/recognition", Keyword)
-        print("label: ", res.label)
+        res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
 
-        if res.label == "yes":
+        res_str = str(res)
+
+        if "no" in res_str or "nope" in res_str or "wrong" in res_str or "incorrect" in res_str:
+            confirmed = True
+
+        elif "yes" in res_str or "yup" in res_str or "yeah" in res_str or " correct" in res_str:
             confirmation = True
             confirmed = True
 
             tts_pub.publish("Very well. Off I go!")
 
-        elif res.label == "no":
-            confirmed = True
+
+
+        keyword_pub.publish(keyword_msg)
 
     if confirmation:
         new_state = "send_location"
 
     else:
-        new_state = "error_state"
+        return ("error_state", "It appears I have misunderstood the location. Please try again.")
 
     return (new_state, room)
 
@@ -109,9 +122,13 @@ def send_location_transition(room):
 
     print(f"Sending {room}")
 
-def error_state_transition(args):
+def error_state_transition(msg):
     print("ERRRORRRR!!!!")
-    tts_pub.publish(f"Sorry, but I did not understand. Please try again.")
+
+    if msg is not None:
+        tts_pub.publish(msg)
+    else:
+        tts_pub.publish(f"Sorry, but I did not understand. Please try again.")
 
     return("error_final", None)
 
