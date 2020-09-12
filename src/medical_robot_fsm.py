@@ -23,6 +23,8 @@ rate = rospy.Rate(loop_rate)  # 10hz
 tts_pub = rospy.Publisher('/ros_tts/tts', String, queue_size=10)
 keyword_pub = rospy.Publisher('/keyword_spotting/recognition', Keyword, queue_size=10)
 
+dest_pub = rospy.Publisher('/medical_robot_fsm/destination', String, queue_size=10)
+
 def keyword_spotted_transition(args):
     print("State 1: listening for keyword")
 
@@ -132,6 +134,12 @@ def send_location_transition(room):
     print("State 6: sending location")
 
     print(f"Sending {room}")
+
+    if room == "room c":
+        dest_pub.publish("c lab")
+
+    elif room == "room c":
+        dest_pub.publish("t lab")
 
 def error_state_transition(msg):
     print("ERRRORRRR!!!!")
