@@ -64,10 +64,21 @@ def tell_user_processing_transition(args):
 def parse_result_transition(args):
     print("State 4: parsing result")
 
-    res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
-    res_str = str(res)
+    found = False
+    res_str = ""
 
-    if "deliver" not in res_str or "package to " not in res_str:
+    while not found:
+        res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
+        res_str = str(res.data)
+        print(res_str)
+        print(res_str.split(' ')[0])
+
+        if res_str.split(' ')[0] == 'robot':
+            found = True
+
+
+
+    if "package to " not in res_str:
         return ("error_state", None)
 
     room = res_str.split("package to ")[1]
@@ -81,15 +92,18 @@ def confirm_result_transition(room):
 
     tts_pub.publish(f"I am supposed to deliver this package to {room}. Is this correct?")
 
-    keyword_msg = Keyword()
-    keyword_msg.label = "robot"
-    keyword_msg.id = 1
-    keyword_msg.confidence = 1.0
-
-    keyword_pub.publish(keyword_msg)
+    # keyword_msg = Keyword()
+    # keyword_msg.label = "robot"
+    # keyword_msg.id = 1
+    # keyword_msg.confidence = 1.0
+    #
+    # keyword_pub.publish(keyword_msg)
 
     confirmation = False
     confirmed = False
+
+    start = time.time()
+
 
     while not confirmed:
         res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
@@ -99,15 +113,12 @@ def confirm_result_transition(room):
         if "no" in res_str or "nope" in res_str or "wrong" in res_str or "incorrect" in res_str:
             confirmed = True
 
-        elif "yes" in res_str or "yup" in res_str or "yeah" in res_str or " correct" in res_str:
+        elif "yes" in res_str or "yup" in res_str or "yeah" in res_str:
             confirmation = True
             confirmed = True
 
             tts_pub.publish("Very well. Off I go!")
-
-
-
-        keyword_pub.publish(keyword_msg)
+        #keyword_pub.publish(keyword_msg)
 
     if confirmation:
         new_state = "send_location"
@@ -134,10 +145,12 @@ def error_state_transition(msg):
 
 while not rospy.is_shutdown():
     m = StateMachine(rospy)
-    m.add_state("start", keyword_spotted_transition)
-    m.add_state("keyword_detected", delay_transition)
-    m.add_state("user_processing", tell_user_processing_transition)
-    m.add_state("parse_result", parse_result_transition)
+    #m.add_state("start", keyword_spotted_transition)
+    # m.add_state("keyword_detected", delay_transition)
+    # m.add_state("user_processing", tell_user_processing_transition)
+    # m.add_state("parse_result", parse_result_transition)
+
+    m.add_state("start", parse_result_transition)
     m.add_state("confirm_result", confirm_result_transition)
     m.add_state("send_location", send_location_transition, end_state=1)
     m.add_state("error_state", error_state_transition)
