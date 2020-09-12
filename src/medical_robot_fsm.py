@@ -136,10 +136,10 @@ def send_location_transition(room):
     print(f"Sending {room}")
 
     if room == "room c":
-        dest_pub.publish("c lab")
+        dest_pub.publish("clab")
 
     elif room == "room c":
-        dest_pub.publish("t lab")
+        dest_pub.publish("tlab")
 
 def error_state_transition(msg):
     print("ERRRORRRR!!!!")
