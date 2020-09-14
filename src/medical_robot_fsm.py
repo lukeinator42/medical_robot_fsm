@@ -22,6 +22,7 @@ rate = rospy.Rate(loop_rate)  # 10hz
 
 tts_pub = rospy.Publisher('/ros_tts/tts', String, queue_size=10)
 keyword_pub = rospy.Publisher('/keyword_spotting/recognition', Keyword, queue_size=10)
+mic_control_pub = rospy.Publisher('/speech_recognition/mic', String, queue_size=10)
 
 dest_pub = rospy.Publisher('/medical_robot_fsm/destination', String, queue_size=10)
 
@@ -69,6 +70,8 @@ def parse_result_transition(args):
     found = False
     res_str = ""
 
+    mic_control_pub.publish("enable")
+
     while not found:
         res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
         res_str = str(res.data)
@@ -78,7 +81,7 @@ def parse_result_transition(args):
         if res_str.split(' ')[0] == 'robot':
             found = True
 
-
+    mic_control_pub.publish("disable")
 
     if "package to " not in res_str:
         return ("error_state", None)
@@ -91,6 +94,8 @@ def parse_result_transition(args):
 
 def confirm_result_transition(room):
     print("State 5: confirming result")
+
+    mic_control_pub.publish("disable")
 
     tts_pub.publish(f"I am supposed to deliver this package to {room}. Is this correct?")
 
@@ -106,7 +111,7 @@ def confirm_result_transition(room):
 
     start = time.time()
 
-
+    mic_control_pub.publish("enable")
     while not confirmed:
         res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
 
@@ -121,6 +126,8 @@ def confirm_result_transition(room):
 
             tts_pub.publish("Very well. Off I go!")
         #keyword_pub.publish(keyword_msg)
+
+    mic_control_pub.publish("disable")
 
     if confirmation:
         new_state = "send_location"
