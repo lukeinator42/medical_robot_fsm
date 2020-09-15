@@ -148,7 +148,7 @@ def send_location_transition(room):
     elif room == "room c":
         dest_pub.publish("tlab")
 
-    return("location_complete", None)
+    return("location_arrived", None)
 
 def location_arrived_transition(args):
     print("State 7: waiting for arrival")
