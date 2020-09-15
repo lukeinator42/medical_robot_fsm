@@ -161,9 +161,19 @@ def location_arrived_transition(args):
         if str(res.data) == "succeeded":
             arrived = True
 
+    new_state = "go_home"
+
+    return (new_state, None)
+
+def go_home_transition(args):
+    print("State 8: go home")
+
+    dest_pub.publish("home")
+
     new_state = "location_complete"
 
     return (new_state, None)
+
 
 def error_state_transition(msg):
     print("ERRRORRRR!!!!")
@@ -186,6 +196,7 @@ while not rospy.is_shutdown():
     m.add_state("confirm_result", confirm_result_transition)
     m.add_state("send_location", send_location_transition)
     m.add_state("location_arrived", location_arrived_transition)
+    m.add_state("go_home", go_home_transition)
     m.add_state("location_complete", None, end_state=1)
     m.add_state("error_state", error_state_transition)
     m.add_state("error_final", None, end_state=1)
