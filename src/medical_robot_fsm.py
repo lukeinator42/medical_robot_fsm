@@ -161,9 +161,46 @@ def location_arrived_transition(args):
         if str(res.data) == "succeeded":
             arrived = True
 
-    new_state = "go_home"
+    new_state = "confirm_delivery"
 
     return (new_state, None)
+
+
+def confirm_delivery_transition(room):
+    print("State 8: confirming delivery")
+
+    mic_control_pub.publish("disable")
+
+    tts_pub.publish(f"Please remove your package.")
+
+    sleep(15)
+
+    tts_pub.publish(f"Have you removed your package?")
+
+    sleep(4)
+
+    confirmed = False
+
+    start = time.time()
+
+    mic_control_pub.publish("enable")
+    while not confirmed:
+        res = rospy.wait_for_message("/speech_recognition/recognized_text", String)
+
+        res_str = str(res)
+
+        if "yes" in res_str or "yup" in res_str or "yeah" in res_str:
+
+            confirmed = True
+
+            tts_pub.publish("Very well. Have a nice day!")
+        #keyword_pub.publish(keyword_msg)
+
+    mic_control_pub.publish("disable")
+
+    new_state = "go_home"
+
+    return (new_state, room)
 
 def go_home_transition(args):
     print("State 8: go home")
@@ -196,6 +233,7 @@ while not rospy.is_shutdown():
     m.add_state("confirm_result", confirm_result_transition)
     m.add_state("send_location", send_location_transition)
     m.add_state("location_arrived", location_arrived_transition)
+    m.add_state("confirm_delivery", confirm_delivery_transition)
     m.add_state("go_home", go_home_transition)
     m.add_state("location_complete", None, end_state=1)
     m.add_state("error_state", error_state_transition)
