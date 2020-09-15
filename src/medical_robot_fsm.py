@@ -145,7 +145,7 @@ def send_location_transition(room):
     if room == "room c":
         dest_pub.publish("clab")
 
-    elif room == "room c":
+    elif room == "room t":
         dest_pub.publish("tlab")
 
     return("location_arrived", None)
