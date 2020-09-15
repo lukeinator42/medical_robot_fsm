@@ -149,7 +149,22 @@ def send_location_transition(room):
         dest_pub.publish("tlab")
 
     return("location_complete", None)
-        
+
+def location_arrived_transition(args):
+    print("State 7: waiting for arrival")
+
+    arrived = False
+
+    while not arrived:
+        res = rospy.wait_for_message("/medical_robot_fsm/confirmation", String)
+
+        if str(res.data) == "succeeded":
+            arrived = True
+
+    new_state = "location_complete"
+
+    return (new_state, None)
+
 def error_state_transition(msg):
     print("ERRRORRRR!!!!")
 
@@ -170,6 +185,7 @@ while not rospy.is_shutdown():
     m.add_state("start", parse_result_transition)
     m.add_state("confirm_result", confirm_result_transition)
     m.add_state("send_location", send_location_transition)
+    m.add_state("location_arrived", location_arrived_transition)
     m.add_state("location_complete", None, end_state=1)
     m.add_state("error_state", error_state_transition)
     m.add_state("error_final", None, end_state=1)
