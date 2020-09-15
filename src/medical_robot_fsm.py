@@ -167,7 +167,7 @@ def location_arrived_transition(args):
 
 def go_home_transition(args):
     print("State 8: go home")
-
+    sleep(10)
     dest_pub.publish("home")
 
     new_state = "location_complete"
